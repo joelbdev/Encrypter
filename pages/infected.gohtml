@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title> List of Infected Devices </title>
+</head>
+<body>
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Hostname</th>
+        <th>Username</th>
+        <th>IP Addresses</th>
+        <th>Encrypted</th>
+        <th>Key</th>
+
+    </tr>
+    {{ range .}}
+        <tr>
+            <td>{{ .ID }}</td>
+            <td>{{ .Hostname }}</td>
+            <td>{{ .User }}</td>
+            <td>{{ .IP }}</td>
+            <td>{{ .Encrypted }}</td>
+            <td>{{ .Key }}</td>
+
+        </tr>
+        {{ end }}
+</table>
+</body>
+</html>
+
+

