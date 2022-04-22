@@ -7,6 +7,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math/rand"
+	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -65,10 +68,30 @@ func Query(db *sql.DB) ([]Enumeration, error) {
 	return devices, nil
 }
 
-//updates values for devices already enrolled
+//updates the encryption key values for devices already enrolled
 func Update(device Enumeration) error {
 
 	defer log.Printf("Updated device %s into DB", device.ID) //TODO: Can this be changed to show what was updated
 
+	//generates an encryption key for use across the host
+
 	return nil
+}
+
+//generates an encryption key
+//TODO: write the logic for when this runs
+func GenerateKey() (string, error) {
+	rand.Seed(time.Now().Unix())
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+		"abcdefghijklmnopqrstuvwxyz" +
+		"0123456789" +
+		"!@#$%^&*")
+
+	var b strings.Builder
+
+	for x := 0; x < 10; x++ {
+		b.WriteRune(chars[rand.Intn(len(chars))])
+	}
+	str := b.String()
+	return str, nil
 }
